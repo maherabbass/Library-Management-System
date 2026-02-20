@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.v1.books import router as books_router
 from app.api.v1.health import router as health_router
 from app.core.config import settings
 from app.core.logging import setup_logging
@@ -36,6 +37,7 @@ app.add_middleware(
 
 # Routers
 app.include_router(health_router)
+app.include_router(books_router)
 
 
 @app.exception_handler(Exception)
