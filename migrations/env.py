@@ -9,8 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.db.base import Base
 
 # Import all models here so Alembic can detect them for autogenerate
-# (models will be added in Phase 1)
-# from app.models import book, user, loan  # noqa: F401
+from app.models import Book, Loan, User  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
