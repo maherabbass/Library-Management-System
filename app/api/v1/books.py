@@ -3,8 +3,10 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import require_role
 from app.db.session import get_db
 from app.models.book import BookStatus
+from app.models.user import UserRole
 from app.schemas.book import BookCreate, BookListResponse, BookResponse, BookUpdate
 from app.services.book import create_book, delete_book, get_book, list_books, update_book
 
@@ -28,7 +30,12 @@ async def list_books_endpoint(
     )
 
 
-@router.post("", response_model=BookResponse, status_code=201)
+@router.post(
+    "",
+    response_model=BookResponse,
+    status_code=201,
+    dependencies=[require_role(UserRole.LIBRARIAN, UserRole.ADMIN)],
+)
 async def create_book_endpoint(
     data: BookCreate,
     db: AsyncSession = Depends(get_db),
@@ -46,7 +53,11 @@ async def get_book_endpoint(
     return BookResponse.model_validate(book)
 
 
-@router.put("/{book_id}", response_model=BookResponse)
+@router.put(
+    "/{book_id}",
+    response_model=BookResponse,
+    dependencies=[require_role(UserRole.LIBRARIAN, UserRole.ADMIN)],
+)
 async def update_book_endpoint(
     book_id: uuid.UUID,
     data: BookUpdate,
@@ -56,7 +67,11 @@ async def update_book_endpoint(
     return BookResponse.model_validate(book)
 
 
-@router.delete("/{book_id}", status_code=204)
+@router.delete(
+    "/{book_id}",
+    status_code=204,
+    dependencies=[require_role(UserRole.LIBRARIAN, UserRole.ADMIN)],
+)
 async def delete_book_endpoint(
     book_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
