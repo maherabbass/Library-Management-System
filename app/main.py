@@ -4,7 +4,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 
+from app.api.v1.admin import router as admin_router
+from app.api.v1.auth import router as auth_router
 from app.api.v1.books import router as books_router
 from app.api.v1.health import router as health_router
 from app.core.config import settings
@@ -14,9 +17,7 @@ from app.core.logging import setup_logging
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging()
-    # DB init / connection pool warm-up will be added in Phase 1
     yield
-    # Cleanup on shutdown will be added as needed
 
 
 app = FastAPI(
@@ -25,6 +26,9 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# Session middleware must come before CORS so state is available during OAuth
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 # CORS
 app.add_middleware(
@@ -38,6 +42,8 @@ app.add_middleware(
 # Routers
 app.include_router(health_router)
 app.include_router(books_router)
+app.include_router(auth_router)
+app.include_router(admin_router)
 
 
 @app.exception_handler(Exception)

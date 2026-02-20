@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_SECRET: str = ""
 
     FRONTEND_URL: str = "http://localhost:5173"
+    BACKEND_URL: str = "http://localhost:8000"
 
     AI_PROVIDER: str = "openai"
     OPENAI_API_KEY: str = ""

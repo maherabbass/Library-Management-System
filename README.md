@@ -90,6 +90,7 @@ See `.env.example` for all required variables.
 | `GOOGLE_CLIENT_ID/SECRET` | Google OAuth credentials |
 | `GITHUB_CLIENT_ID/SECRET` | GitHub OAuth credentials |
 | `FRONTEND_URL` | Frontend origin for CORS |
+| `BACKEND_URL` | Public backend URL used to build OAuth callback URIs |
 | `OPENAI_API_KEY` | OpenAI API key (AI features) |
 
 ## API Endpoints
@@ -128,6 +129,36 @@ Base URL: `/api/v1`
 | **Admin** | Full access including user management |
 | **Librarian** | Create/edit/delete books, manage all loans |
 | **Member** | View/search books, borrow/return own loans |
+
+## OAuth Setup (Local Development)
+
+To test Google or GitHub SSO locally:
+
+### Google OAuth
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials
+2. Create OAuth 2.0 Client ID (Web application)
+3. Add Authorized redirect URI: `http://localhost:8000/api/v1/auth/callback/google`
+4. Copy Client ID + Secret into `.env`
+
+### GitHub OAuth
+1. Go to GitHub Settings → Developer settings → OAuth Apps → New OAuth App
+2. Set Authorization callback URL: `http://localhost:8000/api/v1/auth/callback/github`
+3. Copy Client ID + Secret into `.env`
+
+### Testing OAuth flow
+```bash
+# Start server
+uvicorn app.main:app --reload
+
+# Open browser:
+# http://localhost:8000/api/v1/auth/login/google
+# (redirects → OAuth consent → returns {"access_token": "...", "token_type": "bearer"})
+
+# Use the token:
+TOKEN="<paste_access_token>"
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/auth/me
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/admin/users  # Admin only
+```
 
 ## Deployment
 
