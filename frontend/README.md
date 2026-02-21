@@ -8,7 +8,7 @@ A React + Vite SPA that exercises every feature of the [Library Management Syste
 |---------|-----|
 | **Backend API** | <https://library-app-qtegugoc4a-ew.a.run.app> |
 | **API Docs (Swagger)** | <https://library-app-qtegugoc4a-ew.a.run.app/docs> |
-| **Frontend (Netlify)** | *(set after first deploy — see below)* |
+| **Frontend (Netlify)** | <https://library-man-sys.netlify.app> |
 
 ---
 
@@ -121,23 +121,6 @@ npm install -g netlify-cli
 # Deploy
 netlify deploy --prod --dir dist
 ```
-
----
-
-### Option C — Vercel
-
-```bash
-npm install -g vercel
-cd frontend
-VITE_API_URL=https://library-app-qtegugoc4a-ew.a.run.app npm run build
-vercel --prod
-```
-
-Or connect the repo at <https://vercel.com> and set:
-- **Root Directory**: `frontend`
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
-- **Environment variable**: `VITE_API_URL=https://library-app-qtegugoc4a-ew.a.run.app`
 
 ---
 

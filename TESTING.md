@@ -75,15 +75,14 @@ curl https://library-app-qtegugoc4a-ew.a.run.app/health
 
 ---
 
-## Test 2 — Public Book Browsing (no login required)
+## Test 2 — Book Browsing (API public; frontend requires login)
 
 **What it covers:** `GET /api/v1/books` with all filter combinations
 
+> The API endpoints are public and work without a token. The frontend redirects to `/login` if you are not authenticated.
+
 ### 2-A List all books
 
-Open the frontend — books load immediately without logging in.
-
-Or via curl:
 ```bash
 curl "https://library-app-qtegugoc4a-ew.a.run.app/api/v1/books"
 ```
@@ -749,7 +748,7 @@ Use this to track your progress:
 HEALTH
 [ ] GET /health → 200
 
-PUBLIC BOOKS
+BOOKS (API public; frontend requires login)
 [ ] GET /api/v1/books → 200, 15 books
 [ ] GET /api/v1/books?q=dystopia → filtered results
 [ ] GET /api/v1/books?author=orwell → 1984 only

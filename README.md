@@ -266,7 +266,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/admin/users 
 | Auth (CI/CD) | Workload Identity Federation (OIDC — no JSON keys) |
 | Migrations | Cloud Run Job (`alembic upgrade head`) |
 
-**Live URL:** `https://library-app-<hash>-ew.a.run.app` _(printed at the end of every GitHub Actions deploy run)_
+**Live URL:** `https://library-app-qtegugoc4a-ew.a.run.app`
 
 ---
 
@@ -442,13 +442,13 @@ gcloud run services describe library-app \
 ### Verify the deployed app
 
 ```bash
-BASE="https://<your-cloud-run-url>"
+BASE="https://library-app-qtegugoc4a-ew.a.run.app"
 
 # Health check
 curl "$BASE/health"
 # → {"status":"ok","version":"0.1.0"}
 
-# List books (public)
+# List books (public API)
 curl "$BASE/api/v1/books"
 
 # Interactive docs
