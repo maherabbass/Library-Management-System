@@ -292,7 +292,7 @@ Use a clean structure like:
 
 ### Phase 5 — AI feature(s)
 **Tasks**
-- Implement chosen AI option (A/B/C from section 8)
+- Implement AI features 
 - Add config via env:
   - `AI_PROVIDER`, `OPENAI_API_KEY` or other, model name, etc.
 - Add fallback behavior if missing keys
