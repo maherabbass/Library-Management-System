@@ -141,6 +141,9 @@ jobs:
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Comma-separated extra CORS origins (e.g. http://localhost:5173)
+          # Add your Netlify preview URL here once deployed.
+          EXTRA_CORS_ORIGINS: ${{ secrets.EXTRA_CORS_ORIGINS }}
         run: |
           # Build env-var string from step-level env (GH masks secret values)
           CLOUD_RUN_ENV="APP_ENV=production"
@@ -152,6 +155,7 @@ jobs:
           CLOUD_RUN_ENV="${CLOUD_RUN_ENV},GITHUB_CLIENT_SECRET=${GH_CLIENT_SECRET}"
           CLOUD_RUN_ENV="${CLOUD_RUN_ENV},FRONTEND_URL=${FRONTEND_URL}"
           CLOUD_RUN_ENV="${CLOUD_RUN_ENV},BACKEND_URL=${BACKEND_URL}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},EXTRA_CORS_ORIGINS=${EXTRA_CORS_ORIGINS}"
           CLOUD_RUN_ENV="${CLOUD_RUN_ENV},AI_PROVIDER=openai"
           CLOUD_RUN_ENV="${CLOUD_RUN_ENV},OPENAI_API_KEY=${OPENAI_API_KEY}"
           CLOUD_RUN_ENV="${CLOUD_RUN_ENV},OPENAI_MODEL=gpt-4o-mini"
