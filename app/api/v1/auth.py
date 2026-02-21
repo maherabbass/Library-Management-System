@@ -82,9 +82,7 @@ async def callback(
 
     # Redirect to frontend SPA with the JWT; fall back to JSON for API-only usage
     if settings.FRONTEND_URL:
-        return RedirectResponse(
-            url=f"{settings.FRONTEND_URL}/auth/callback?token={access_token}"
-        )
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/auth/callback?token={access_token}")
     return TokenResponse(access_token=access_token)
 
 
