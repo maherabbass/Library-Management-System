@@ -203,8 +203,202 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/admin/users 
 
 ## Deployment
 
-> Deployment details will be added after Phase 6.
+### Architecture
 
-- **Backend:** Render
-- **Database:** Render managed PostgreSQL
-- **Live URL:** _TBD_
+| Component | Technology |
+|---|---|
+| Backend runtime | Google Cloud Run (managed, serverless) |
+| Database | Google Cloud SQL — PostgreSQL 16 |
+| Container registry | Google Artifact Registry |
+| CI/CD | GitHub Actions |
+| Auth (CI/CD) | Workload Identity Federation (OIDC — no JSON keys) |
+| Migrations | Cloud Run Job (`alembic upgrade head`) |
+
+**Live URL:** `https://library-app-<hash>-ew.a.run.app` _(printed at the end of every GitHub Actions deploy run)_
+
+---
+
+### One-time GCP setup
+
+Run these commands **once** from any machine with `gcloud` authenticated as project Owner.
+Replace `GITHUB_ORG` / `GITHUB_REPO` if you forked the repo.
+
+```bash
+PROJECT_ID="library-system-488110-p7"
+REGION="europe-west1"
+GITHUB_ORG="maherabbass"
+GITHUB_REPO="Library-Management-System"
+SA_NAME="github-actions-sa"
+WIF_POOL="github-pool"
+WIF_PROVIDER_NAME="github-provider"
+
+# 1 — Enable required APIs
+gcloud services enable \
+  run.googleapis.com \
+  sqladmin.googleapis.com \
+  artifactregistry.googleapis.com \
+  iam.googleapis.com \
+  iamcredentials.googleapis.com \
+  cloudresourcemanager.googleapis.com \
+  --project=$PROJECT_ID
+
+# 2 — Create Artifact Registry Docker repository
+gcloud artifacts repositories create library-app \
+  --repository-format=docker \
+  --location=$REGION \
+  --project=$PROJECT_ID
+
+# 3 — Create dedicated service account for GitHub Actions
+gcloud iam service-accounts create $SA_NAME \
+  --display-name="GitHub Actions Deploy SA" \
+  --project=$PROJECT_ID
+
+SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+
+# 4 — Grant the minimum required IAM roles
+for ROLE in \
+  roles/run.admin \
+  roles/artifactregistry.writer \
+  roles/cloudsql.client \
+  roles/iam.serviceAccountUser; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:${SA_EMAIL}" \
+    --role="$ROLE"
+done
+
+# 5 — Create Workload Identity Pool
+gcloud iam workload-identity-pools create $WIF_POOL \
+  --location=global \
+  --display-name="GitHub Actions Pool" \
+  --project=$PROJECT_ID
+
+POOL_ID=$(gcloud iam workload-identity-pools describe $WIF_POOL \
+  --location=global \
+  --project=$PROJECT_ID \
+  --format="value(name)")
+
+# 6 — Create OIDC provider (scoped to this exact repo)
+gcloud iam workload-identity-pools providers create-oidc $WIF_PROVIDER_NAME \
+  --location=global \
+  --workload-identity-pool=$WIF_POOL \
+  --display-name="GitHub OIDC Provider" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
+  --attribute-condition="assertion.repository=='${GITHUB_ORG}/${GITHUB_REPO}'" \
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --project=$PROJECT_ID
+
+PROVIDER_ID=$(gcloud iam workload-identity-pools providers describe $WIF_PROVIDER_NAME \
+  --location=global \
+  --workload-identity-pool=$WIF_POOL \
+  --project=$PROJECT_ID \
+  --format="value(name)")
+
+# 7 — Allow the repo's OIDC token to impersonate the service account
+gcloud iam service-accounts add-iam-policy-binding "${SA_EMAIL}" \
+  --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/${POOL_ID}/attribute.repository/${GITHUB_ORG}/${GITHUB_REPO}" \
+  --project=$PROJECT_ID
+
+# 8 — Print the values you need for GitHub Secrets (step below)
+echo ""
+echo "=== Add these as GitHub Secrets ==="
+echo "WIF_PROVIDER:       ${PROVIDER_ID}"
+echo "GCP_SERVICE_ACCOUNT: ${SA_EMAIL}"
+```
+
+---
+
+### Required GitHub Secrets
+
+Go to **Settings → Secrets and variables → Actions → New repository secret** and add:
+
+| Secret name | Value | Notes |
+|---|---|---|
+| `WIF_PROVIDER` | output of step 8 above | WIF provider resource name |
+| `GCP_SERVICE_ACCOUNT` | output of step 8 above | SA email |
+| `DATABASE_URL` | see format below | Cloud SQL async URL |
+| `SECRET_KEY` | random 32+ char string | JWT signing key |
+| `GOOGLE_CLIENT_ID` | from Google Cloud Console | OAuth 2.0 client |
+| `GOOGLE_CLIENT_SECRET` | from Google Cloud Console | OAuth 2.0 secret |
+| `GH_CLIENT_ID` | from GitHub OAuth App | **note: cannot start with `GITHUB_`** |
+| `GH_CLIENT_SECRET` | from GitHub OAuth App | same note |
+| `FRONTEND_URL` | e.g. `https://your-frontend.vercel.app` | or same as BACKEND_URL |
+| `BACKEND_URL` | your Cloud Run service URL | update after first deploy |
+| `OPENAI_API_KEY` | OpenAI key | leave empty to use fallback |
+
+#### DATABASE_URL format for Cloud SQL (Unix socket)
+
+Cloud Run connects to Cloud SQL via a Unix socket automatically when
+`--add-cloudsql-instances` is set. Use this URL format:
+
+```
+postgresql+asyncpg://DB_USER:DB_PASSWORD@/DB_NAME?host=/cloudsql/library-system-488110-p7:europe-west1:library-postgres
+```
+
+> **Note:** if your password contains a comma, URL-encode it (`,` → `%2C`).
+
+---
+
+### OAuth callback URLs (production)
+
+After you know your Cloud Run URL, update your OAuth app registrations:
+
+| Provider | Callback URL |
+|---|---|
+| Google | `https://<cloud-run-url>/api/v1/auth/callback/google` |
+| GitHub | `https://<cloud-run-url>/api/v1/auth/callback/github` |
+
+Set `BACKEND_URL=https://<cloud-run-url>` in GitHub Secrets so the app
+generates the correct redirect URIs.
+
+---
+
+### How the CI/CD pipeline works
+
+```
+push to main
+  └─ test job: ruff + black --check + pytest (no DB needed)
+       └─ deploy job (main only):
+            1. WIF auth (OIDC, no keys)
+            2. docker build + push → Artifact Registry
+            3. Cloud Run Job: alembic upgrade head  ← migrations BEFORE traffic
+            4. gcloud run deploy → new revision gets 100% traffic
+            5. Print live URL
+```
+
+**Migration order justification:** additive migrations (adding tables / columns)
+are safe for the currently-running code. Running them *before* the new revision
+goes live means the schema is ready the moment new traffic arrives, with zero
+risk of the old code breaking.
+
+---
+
+### Getting the deployed URL
+
+The URL is printed at the end of each deploy run ("Print deployed URL" step).
+You can also query it any time:
+
+```bash
+gcloud run services describe library-app \
+  --region=europe-west1 \
+  --project=library-system-488110-p7 \
+  --format="value(status.url)"
+```
+
+---
+
+### Verify the deployed app
+
+```bash
+BASE="https://<your-cloud-run-url>"
+
+# Health check
+curl "$BASE/health"
+# → {"status":"ok","version":"0.1.0"}
+
+# List books (public)
+curl "$BASE/api/v1/books"
+
+# Interactive docs
+open "$BASE/docs"
+```
