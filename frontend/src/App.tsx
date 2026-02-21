@@ -51,8 +51,12 @@ export default function App() {
           <Route path="/login" element={isAuthenticated ? <Navigate to="/books" replace /> : <Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
-          <Route path="/books" element={<Books />} />
-          <Route path="/ai-search" element={<AISearch />} />
+          <Route path="/books" element={
+            <RequireAuth><Books /></RequireAuth>
+          } />
+          <Route path="/ai-search" element={
+            <RequireAuth><AISearch /></RequireAuth>
+          } />
 
           <Route path="/books/new" element={
             <RequireLibrarian><CreateEditBook mode="create" /></RequireLibrarian>
@@ -60,7 +64,9 @@ export default function App() {
           <Route path="/books/:id/edit" element={
             <RequireLibrarian><CreateEditBook mode="edit" /></RequireLibrarian>
           } />
-          <Route path="/books/:id" element={<BookDetail />} />
+          <Route path="/books/:id" element={
+            <RequireAuth><BookDetail /></RequireAuth>
+          } />
 
           <Route path="/loans" element={
             <RequireAuth><Loans /></RequireAuth>
