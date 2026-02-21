@@ -16,7 +16,6 @@ from app.api.v1.loans import router as loans_router
 from app.core.config import settings
 from app.core.logging import setup_logging
 
-
 _TAG_METADATA: list[dict[str, Any]] = [
     {
         "name": "health",
