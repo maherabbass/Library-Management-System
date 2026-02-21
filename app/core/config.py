@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/library"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:testPostgres@localhost:5433/library"
 
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""

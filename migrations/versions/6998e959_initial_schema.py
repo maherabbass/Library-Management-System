@@ -20,13 +20,24 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # --- Enum types ---
-    userrole = postgresql.ENUM("ADMIN", "LIBRARIAN", "MEMBER", name="userrole")
-    bookstatus = postgresql.ENUM("AVAILABLE", "BORROWED", name="bookstatus")
-    loanstatus = postgresql.ENUM("OUT", "RETURNED", name="loanstatus")
-    userrole.create(op.get_bind())
-    bookstatus.create(op.get_bind())
-    loanstatus.create(op.get_bind())
+    # Use raw SQL so IF NOT EXISTS is honoured — avoids SQLAlchemy's internal
+    # _on_table_create event re-attempting creation despite create_type=False.
+    op.execute("""
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'userrole') THEN
+            CREATE TYPE userrole AS ENUM ('ADMIN', 'LIBRARIAN', 'MEMBER');
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'bookstatus') THEN
+            CREATE TYPE bookstatus AS ENUM ('AVAILABLE', 'BORROWED');
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'loanstatus') THEN
+            CREATE TYPE loanstatus AS ENUM ('OUT', 'RETURNED');
+        END IF;
+    END$$;
+    """)
 
     # --- users ---
     op.create_table(
@@ -36,7 +47,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column(
             "role",
-            sa.Enum("ADMIN", "LIBRARIAN", "MEMBER", name="userrole", create_type=False),
+            postgresql.ENUM("ADMIN", "LIBRARIAN", "MEMBER", name="userrole", create_type=False),
             server_default="MEMBER",
             nullable=False,
         ),
@@ -65,7 +76,7 @@ def upgrade() -> None:
         sa.Column("tags", postgresql.ARRAY(sa.String()), nullable=True),
         sa.Column(
             "status",
-            sa.Enum("AVAILABLE", "BORROWED", name="bookstatus", create_type=False),
+            postgresql.ENUM("AVAILABLE", "BORROWED", name="bookstatus", create_type=False),
             server_default="AVAILABLE",
             nullable=False,
         ),
@@ -100,7 +111,7 @@ def upgrade() -> None:
         sa.Column("returned_at", postgresql.TIMESTAMP(timezone=True), nullable=True),
         sa.Column(
             "status",
-            sa.Enum("OUT", "RETURNED", name="loanstatus", create_type=False),
+            postgresql.ENUM("OUT", "RETURNED", name="loanstatus", create_type=False),
             server_default="OUT",
             nullable=False,
         ),
@@ -111,20 +122,19 @@ def upgrade() -> None:
 
     # Partial unique index — one active loan per book
     op.execute("""
-        CREATE UNIQUE INDEX uq_active_loan_per_book
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_active_loan_per_book
         ON loans (book_id)
         WHERE status = 'OUT'
-        """)
+    """)
 
 
 def downgrade() -> None:
-    op.drop_index("uq_active_loan_per_book", table_name="loans")
+    op.execute("DROP INDEX IF EXISTS uq_active_loan_per_book")
     op.drop_table("loans")
     op.drop_table("books")
     op.drop_index("ix_users_email", table_name="users")
     op.drop_table("users")
 
-    # Drop enum types
-    sa.Enum(name="loanstatus").drop(op.get_bind())
-    sa.Enum(name="bookstatus").drop(op.get_bind())
-    sa.Enum(name="userrole").drop(op.get_bind())
+    op.execute("DROP TYPE IF EXISTS loanstatus")
+    op.execute("DROP TYPE IF EXISTS bookstatus")
+    op.execute("DROP TYPE IF EXISTS userrole")
