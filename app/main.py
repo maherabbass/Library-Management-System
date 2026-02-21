@@ -28,10 +28,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS should be outermost so preflight OPTIONS is handled correctly
+# CORS — explicit origins + optional regex for dynamic URLs (e.g. Netlify previews)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

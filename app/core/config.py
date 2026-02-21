@@ -1,5 +1,18 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Localhost origins are always safe to allow — no attacker reaches localhost.
+# Hardcoding them means developers never need to touch CORS config.
+_LOCALHOST_ORIGINS: list[str] = [
+    "http://localhost:3000",
+    "http://localhost:4173",  # vite preview
+    "http://localhost:5173",  # vite dev
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:4173",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8080",
+]
+
 
 class Settings(BaseSettings):
     APP_ENV: str = "development"
@@ -14,15 +27,20 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""
 
-    # FRONTEND_URL is used for the OAuth callback redirect and as the default
-    # CORS origin.  Set it to the primary deployed frontend URL.
+    # Primary frontend URL — used for the OAuth callback redirect AND as the
+    # default CORS origin.  Must match the deployed frontend (Netlify/Vercel).
     FRONTEND_URL: str = "http://localhost:5173"
     BACKEND_URL: str = "http://localhost:8000"
 
-    # Optional extra CORS origins, comma-separated.
-    # Useful to allow localhost during development alongside a deployed frontend.
-    # Example: "http://localhost:5173,http://localhost:4173"
+    # Additional explicit CORS origins, comma-separated.
+    # Not needed for localhost (always allowed) or URLs covered by
+    # CORS_ORIGIN_REGEX.  Useful for a staging URL, etc.
     EXTRA_CORS_ORIGINS: str = ""
+
+    # Regex matching dynamic origins such as Netlify deploy-preview URLs.
+    # Example: r"https://(.*--)?library-man-sys\.netlify\.app"
+    # Leave empty to disable regex matching.
+    CORS_ORIGIN_REGEX: str = ""
 
     AI_PROVIDER: str = "openai"
     OPENAI_API_KEY: str = ""
@@ -32,13 +50,20 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        """All allowed CORS origins: FRONTEND_URL + any EXTRA_CORS_ORIGINS."""
-        origins = [self.FRONTEND_URL]
-        for origin in self.EXTRA_CORS_ORIGINS.split(","):
-            stripped = origin.strip()
-            if stripped and stripped not in origins:
-                origins.append(stripped)
+        """Explicit allowed origins: localhost variants + FRONTEND_URL + extras."""
+        seen: set[str] = set()
+        origins: list[str] = []
+        for raw in [*_LOCALHOST_ORIGINS, self.FRONTEND_URL, *self.EXTRA_CORS_ORIGINS.split(",")]:
+            origin = raw.strip()
+            if origin and origin not in seen:
+                seen.add(origin)
+                origins.append(origin)
         return origins
+
+    @property
+    def cors_origin_regex(self) -> str | None:
+        """Regex for dynamic origins (Netlify previews, etc.). None = disabled."""
+        return self.CORS_ORIGIN_REGEX.strip() or None
 
 
 settings = Settings()
