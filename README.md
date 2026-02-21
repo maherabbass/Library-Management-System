@@ -95,34 +95,86 @@ See `.env.example` for all required variables.
 | `OPENAI_API_KEY` | OpenAI API key; leave empty to use deterministic fallback |
 | `OPENAI_MODEL` | OpenAI model name (default: `gpt-4o-mini`) |
 
-## API Endpoints
+## API Documentation
+
+The full OpenAPI 3.0 specification lives in [`docs/swagger.json`](./docs/swagger.json).
+Open it in any Swagger-compatible viewer:
+
+- **Online:** paste the raw GitHub URL into [editor.swagger.io](https://editor.swagger.io)
+- **Local Swagger UI:** `npx @redocly/cli preview-docs docs/swagger.json`
+- **Built-in (FastAPI):** `http://localhost:8000/docs` (local) or `https://library-app-qtegugoc4a-ew.a.run.app/docs` (production)
+
+### Authenticating in Swagger UI
+
+1. Open the Swagger UI URL above.
+2. In a separate browser tab, navigate to:
+   `https://library-app-qtegugoc4a-ew.a.run.app/api/v1/auth/login/google`
+3. Complete the Google (or GitHub) OAuth consent flow.
+4. You are redirected to the frontend — copy the `token` value from the URL
+   (`https://…/auth/callback?token=<JWT>`), or from
+   **DevTools → Application → Local Storage → `access_token`**.
+5. Back in Swagger UI, click the **Authorize 🔒** button (top right).
+6. Paste the token and click **Authorize**.
+
+All protected endpoints are now unlocked for the current session.
+
+### API Tag Groups
+
+The API is organized into six tagged sections in Swagger UI:
+
+| Tag | Description |
+|-----|-------------|
+| **health** | Liveness probe — no auth needed |
+| **auth** | OAuth login + JWT issuance + current user |
+| **books** | Book CRUD, text search, pagination — GET endpoints public |
+| **loans** | Check-out / return workflows |
+| **ai** | AI metadata enrichment, semantic search, library chat assistant |
+| **admin** | User management — Admin role only |
+
+### Endpoint Reference
 
 Base URL: `/api/v1`
 
-### Auth
-- `GET /api/v1/auth/login/{provider}` — Start OAuth flow
-- `GET /api/v1/auth/callback/{provider}` — OAuth callback
-- `GET /api/v1/auth/me` — Current user info
+#### Health
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/health` | — | Server liveness probe |
 
-### Books
-- `GET /api/v1/books` — List books (with search & pagination)
-- `POST /api/v1/books` — Create book (Librarian/Admin)
-- `GET /api/v1/books/{id}` — Get book
-- `PUT /api/v1/books/{id}` — Update book (Librarian/Admin)
-- `DELETE /api/v1/books/{id}` — Delete book (Librarian/Admin)
-- `POST /api/v1/books/enrich` — AI metadata enrichment (Librarian/Admin)
+#### Auth
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/auth/login/{provider}` | — | Start OAuth flow (`google` \| `github`) |
+| `GET` | `/auth/callback/{provider}` | — | OAuth callback — issues JWT |
+| `GET` | `/auth/me` | Bearer | Current user profile |
 
-### Loans
-- `POST /api/v1/loans/checkout` — Borrow a book
-- `POST /api/v1/loans/return` — Return a book
-- `GET /api/v1/loans` — List loans
+#### Books
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/books` | — | List books (search + pagination) |
+| `POST` | `/books` | Librarian / Admin | Create a book |
+| `GET` | `/books/{id}` | — | Get a single book |
+| `PUT` | `/books/{id}` | Librarian / Admin | Update a book |
+| `DELETE` | `/books/{id}` | Librarian / Admin | Delete a book |
 
-### Admin
-- `GET /api/v1/admin/users` — List users (Admin)
-- `PATCH /api/v1/admin/users/{id}/role` — Change user role (Admin)
+#### AI Features
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/books/enrich` | Librarian / Admin | Generate AI summary, tags & keywords |
+| `GET` | `/books/ai-search` | — | Semantic search via embeddings |
+| `POST` | `/books/ask` | Bearer | Grounded library chat assistant |
 
-### Health
-- `GET /health` — Health check
+#### Loans
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/loans/checkout` | Bearer | Borrow a book |
+| `POST` | `/loans/return` | Bearer | Return a book |
+| `GET` | `/loans` | Bearer | List loans (Members: own only) |
+
+#### Admin
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/admin/users` | Admin | List all users |
+| `PATCH` | `/admin/users/{id}/role` | Admin | Change a user's role |
 
 ## Roles & Permissions
 
