@@ -106,7 +106,7 @@ jobs:
               --command="alembic" \
               --args="upgrade,head" \
               --set-env-vars="DATABASE_URL=${DB_URL}" \
-              --add-cloudsql-instances="$SQL_INST" \
+              --set-cloudsql-instances="$SQL_INST" \
               --max-retries=0 \
               --task-timeout=5m
           else
@@ -117,7 +117,7 @@ jobs:
               --command="alembic" \
               --args="upgrade,head" \
               --set-env-vars="DATABASE_URL=${DB_URL}" \
-              --add-cloudsql-instances="$SQL_INST" \
+              --set-cloudsql-instances="$SQL_INST" \
               --max-retries=0 \
               --task-timeout=5m
           fi
