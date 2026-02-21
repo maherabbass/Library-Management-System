@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
@@ -78,6 +79,12 @@ async def callback(
 
     user = await get_or_create_user(db, email=email, name=name, provider=provider, subject=subject)
     access_token = create_access_token({"sub": str(user.id)})
+
+    # Redirect to frontend SPA with the JWT; fall back to JSON for API-only usage
+    if settings.FRONTEND_URL:
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/auth/callback?token={access_token}"
+        )
     return TokenResponse(access_token=access_token)
 
 
