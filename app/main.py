@@ -28,10 +28,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Session middleware must come before CORS so state is available during OAuth
-app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
-
-# CORS
+# CORS should be outermost so preflight OPTIONS is handled correctly
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -39,6 +36,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Session middleware (OAuth)
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
 # Routers
 app.include_router(health_router)
