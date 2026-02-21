@@ -91,7 +91,9 @@ See `.env.example` for all required variables.
 | `GITHUB_CLIENT_ID/SECRET` | GitHub OAuth credentials |
 | `FRONTEND_URL` | Frontend origin for CORS |
 | `BACKEND_URL` | Public backend URL used to build OAuth callback URIs |
-| `OPENAI_API_KEY` | OpenAI API key (AI features) |
+| `AI_PROVIDER` | AI backend to use (`openai` — the only supported value) |
+| `OPENAI_API_KEY` | OpenAI API key; leave empty to use deterministic fallback |
+| `OPENAI_MODEL` | OpenAI model name (default: `gpt-4o-mini`) |
 
 ## API Endpoints
 
@@ -108,7 +110,7 @@ Base URL: `/api/v1`
 - `GET /api/v1/books/{id}` — Get book
 - `PUT /api/v1/books/{id}` — Update book (Librarian/Admin)
 - `DELETE /api/v1/books/{id}` — Delete book (Librarian/Admin)
-- `GET /api/v1/books/ai-search` — Semantic search (AI)
+- `POST /api/v1/books/enrich` — AI metadata enrichment (Librarian/Admin)
 
 ### Loans
 - `POST /api/v1/loans/checkout` — Borrow a book
@@ -129,6 +131,45 @@ Base URL: `/api/v1`
 | **Admin** | Full access including user management |
 | **Librarian** | Create/edit/delete books, manage all loans |
 | **Member** | View/search books, borrow/return own loans |
+
+## AI Enrichment Feature
+
+`POST /api/v1/books/enrich` generates summary, tags, and keywords for a book
+given its title, author, and optional description.  Librarians call it to
+preview metadata before creating or updating a book — nothing is saved
+automatically.
+
+```bash
+TOKEN="<librarian access token>"
+
+curl -X POST http://localhost:8000/api/v1/books/enrich \
+     -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Dune","author":"Frank Herbert","description":"A sci-fi epic set on a desert planet."}'
+```
+
+Example response with OpenAI configured:
+```json
+{
+  "summary": "A science fiction epic following Paul Atreides on the desert planet Arrakis.",
+  "tags": ["science-fiction", "epic", "desert"],
+  "keywords": ["dune", "arrakis", "spice", "paul", "atreides", "herbert"],
+  "source": "openai"
+}
+```
+
+Example response **without** `OPENAI_API_KEY` (deterministic fallback):
+```json
+{
+  "summary": "A sci-fi epic set on a desert planet.",
+  "tags": ["dune", "frank", "herbert"],
+  "keywords": ["dune", "frank", "herbert"],
+  "source": "fallback"
+}
+```
+
+To enable OpenAI: set `OPENAI_API_KEY` in `.env`.  Any provider errors also
+fall back gracefully to the heuristic enrichment.
 
 ## OAuth Setup (Local Development)
 
