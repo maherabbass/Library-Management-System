@@ -148,21 +148,23 @@ jobs:
           # Example value: https://(.*--)?library-man-sys\.netlify\.app
           CORS_ORIGIN_REGEX: ${{ secrets.CORS_ORIGIN_REGEX }}
         run: |
-          # Build env-var string from step-level env (GH masks secret values)
+          # Use | as the key=value pair separator so that values which contain
+          # commas (e.g. EXTRA_CORS_ORIGINS, DATABASE_URL) are passed verbatim.
+          # The ^|^ prefix tells gcloud to treat | as the delimiter instead of ,.
           CLOUD_RUN_ENV="APP_ENV=production"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},DATABASE_URL=${DATABASE_URL}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},SECRET_KEY=${SECRET_KEY}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},GITHUB_CLIENT_ID=${GH_CLIENT_ID}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},GITHUB_CLIENT_SECRET=${GH_CLIENT_SECRET}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},FRONTEND_URL=${FRONTEND_URL}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},BACKEND_URL=${BACKEND_URL}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},EXTRA_CORS_ORIGINS=${EXTRA_CORS_ORIGINS}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},CORS_ORIGIN_REGEX=${CORS_ORIGIN_REGEX}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},AI_PROVIDER=openai"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},OPENAI_API_KEY=${OPENAI_API_KEY}"
-          CLOUD_RUN_ENV="${CLOUD_RUN_ENV},OPENAI_MODEL=gpt-4o-mini"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|DATABASE_URL=${DATABASE_URL}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|SECRET_KEY=${SECRET_KEY}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|GITHUB_CLIENT_ID=${GH_CLIENT_ID}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|GITHUB_CLIENT_SECRET=${GH_CLIENT_SECRET}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|FRONTEND_URL=${FRONTEND_URL}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|BACKEND_URL=${BACKEND_URL}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|EXTRA_CORS_ORIGINS=${EXTRA_CORS_ORIGINS}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|CORS_ORIGIN_REGEX=${CORS_ORIGIN_REGEX}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|AI_PROVIDER=openai"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|OPENAI_API_KEY=${OPENAI_API_KEY}"
+          CLOUD_RUN_ENV="${CLOUD_RUN_ENV}|OPENAI_MODEL=gpt-4o-mini"
 
           gcloud run deploy "${{ env.SERVICE_NAME }}" \
             --image="${{ steps.build.outputs.image }}" \
@@ -171,7 +173,7 @@ jobs:
             --platform=managed \
             --allow-unauthenticated \
             --add-cloudsql-instances="${{ env.CLOUD_SQL_INSTANCE }}" \
-            --set-env-vars="${CLOUD_RUN_ENV}" \
+            --set-env-vars="^|^${CLOUD_RUN_ENV}" \
             --min-instances=0 \
             --max-instances=3 \
             --timeout=60
