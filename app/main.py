@@ -138,7 +138,16 @@ app.add_middleware(
 )
 
 # Session middleware (OAuth)
-app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+# Production (HTTPS): SameSite=none + Secure so the cookie is sent back on the
+# cross-site redirect from Google/GitHub to our callback URL.
+# Development (HTTP): SameSite=lax (browsers reject SameSite=none without Secure).
+_prod = settings.APP_ENV == "production"
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY,
+    same_site="none" if _prod else "lax",
+    https_only=_prod,
+)
 
 # Routers
 app.include_router(health_router)

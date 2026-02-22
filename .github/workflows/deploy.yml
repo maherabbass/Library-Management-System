@@ -141,11 +141,10 @@ jobs:
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          # Comma-separated extra CORS origins (e.g. http://localhost:5173)
-          # Add your Netlify preview URL here once deployed.
+          # Comma-separated extra CORS origins beyond FRONTEND_URL + localhost.
           EXTRA_CORS_ORIGINS: ${{ secrets.EXTRA_CORS_ORIGINS }}
-          # Regex for dynamic origins — Netlify deploy previews, staging URLs, etc.
-          # Example value: https://(.*--)?library-man-sys\.netlify\.app
+          # Regex for dynamic origins — Vercel preview deployments, staging URLs, etc.
+          # Example value: https://library-management-system[^.]*\.vercel\.app
           CORS_ORIGIN_REGEX: ${{ secrets.CORS_ORIGIN_REGEX }}
         run: |
           # Use | as the key=value pair separator so that values which contain
