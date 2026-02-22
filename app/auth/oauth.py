@@ -68,9 +68,7 @@ def verify_oauth_state(state: str, secret_key: str, max_age: int = 600) -> bool:
         if int(time.time()) - int(ts) > max_age:
             return False
         payload = f"{prefix}.{ts}"
-        expected = _hmac.new(
-            secret_key.encode(), payload.encode(), hashlib.sha256
-        ).hexdigest()
+        expected = _hmac.new(secret_key.encode(), payload.encode(), hashlib.sha256).hexdigest()
         return _hmac.compare_digest(sig, expected)
     except Exception:
         return False
