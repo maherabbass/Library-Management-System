@@ -4,7 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user
 from app.auth.jwt import create_access_token
-from app.auth.oauth import SUPPORTED_PROVIDERS, oauth
+from app.auth.oauth import (
+    SUPPORTED_PROVIDERS,
+    generate_oauth_state,
+    oauth,
+    state_to_nonce,
+    verify_oauth_state,
+)
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
@@ -54,7 +60,9 @@ async def login(provider: str, request: Request) -> None:
         )
     redirect_uri = f"{settings.BACKEND_URL}/api/v1/auth/callback/{provider}"
     client = oauth.create_client(provider)
-    return await client.authorize_redirect(request, redirect_uri)
+    state = generate_oauth_state(settings.SECRET_KEY)
+    nonce = state_to_nonce(state)
+    return await client.authorize_redirect(request, redirect_uri, state=state, nonce=nonce)
 
 
 @router.get(
@@ -89,6 +97,25 @@ async def callback(
             status_code=503,
             detail=f"Provider '{provider}' is not configured on this server",
         )
+
+    # Verify our HMAC-signed state before doing anything else (CSRF guard).
+    state = request.query_params.get("state", "")
+    if not verify_oauth_state(state, settings.SECRET_KEY):
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+
+    # If the session cookie was lost during the OAuth redirect round-trip (a
+    # known issue on Cloud Run where the load balancer can strip Set-Cookie
+    # from 302 responses), reconstruct the session data that Authlib expects.
+    # When the session IS intact this block is skipped and Authlib uses the
+    # real session data as normal.
+    redirect_uri = f"{settings.BACKEND_URL}/api/v1/auth/callback/{provider}"
+    session_key = f"_{provider}_state_{state}"
+    if session_key not in request.session:
+        request.session[session_key] = {
+            "state": state,
+            "redirect_uri": redirect_uri,
+            "nonce": state_to_nonce(state),
+        }
 
     client = oauth.create_client(provider)
     token = await client.authorize_access_token(request)
