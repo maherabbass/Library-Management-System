@@ -8,7 +8,7 @@ A React + Vite SPA that exercises every feature of the [Library Management Syste
 |---------|-----|
 | **Backend API** | <https://library-app-qtegugoc4a-ew.a.run.app> |
 | **API Docs (Swagger)** | <https://library-app-qtegugoc4a-ew.a.run.app/docs> |
-| **Frontend (Netlify)** | <https://library-man-sys.netlify.app> |
+| **Frontend (Vercel)** | <https://your-project.vercel.app> |
 
 ---
 
@@ -72,7 +72,7 @@ npm run build
 
 ---
 
-## Deployment to Netlify
+## Deployment to Vercel
 
 ### Option A — Automated via GitHub Actions (recommended)
 
@@ -80,46 +80,63 @@ The workflow `.github/workflows/deploy-frontend.yml` builds and deploys on every
 
 **One-time setup:**
 
-1. **Create a Netlify account** at <https://netlify.com>.
+1. **Create a Vercel account** at <https://vercel.com>.
 
-2. **Create a new site** (Netlify dashboard → "Add new site" → "Deploy manually" → drag any placeholder).
-
-3. **Get your tokens:**
-   - `NETLIFY_AUTH_TOKEN`: Netlify user settings → Applications → Personal access tokens
-   - `NETLIFY_SITE_ID`: Site settings → Site information → Site ID
-
-4. **Add GitHub Secrets** (repo → Settings → Secrets → Actions):
-   ```
-   NETLIFY_AUTH_TOKEN   = <your auth token>
-   NETLIFY_SITE_ID      = <your site ID>
-   VITE_API_URL         = https://library-app-qtegugoc4a-ew.a.run.app
+2. **Install the Vercel CLI and link the project:**
+   ```bash
+   npm install -g vercel
+   cd frontend
+   vercel link
+   # Follow the prompts — this creates .vercel/project.json
    ```
 
-5. **Update backend CORS** — add the Netlify URL to the `FRONTEND_URL` env var on Cloud Run:
+3. **Get your tokens and IDs:**
+   - `VERCEL_TOKEN`: Vercel dashboard → Settings → Tokens → Create token
+   - `VERCEL_ORG_ID`: shown in `.vercel/project.json` as `orgId`, or run `vercel whoami --token=<token>`
+   - `VERCEL_PROJECT_ID`: shown in `.vercel/project.json` as `projectId`
+
+4. **Set `VITE_API_URL` in Vercel project settings:**
+   Vercel dashboard → your project → Settings → Environment Variables → add:
    ```
-   FRONTEND_URL=https://your-site.netlify.app
+   VITE_API_URL = https://library-app-qtegugoc4a-ew.a.run.app
+   ```
+   Select **Production** (and optionally Preview/Development).
+
+5. **Add GitHub Secrets** (repo → Settings → Secrets → Actions):
+   ```
+   VERCEL_TOKEN       = <your personal access token>
+   VERCEL_ORG_ID      = <from .vercel/project.json>
+   VERCEL_PROJECT_ID  = <from .vercel/project.json>
+   ```
+
+6. **Update backend CORS** — add the Vercel URL to the `FRONTEND_URL` env var on Cloud Run:
+   ```
+   FRONTEND_URL=https://your-project.vercel.app
    ```
    This is needed for:
    - CORS to allow the frontend origin
    - The OAuth callback to redirect back to your SPA
 
-6. Push to `main` — the workflow will build and deploy automatically.
-   The deployed URL appears in the GitHub Actions logs and as a PR comment.
+7. Push to `main` — the workflow will build and deploy automatically.
+   The deployed URL is printed at the end of the workflow run.
 
 ---
 
-### Option B — Manual Netlify deploy
+### Option B — Manual Vercel deploy
 
 ```bash
 cd frontend
 npm install
-VITE_API_URL=https://library-app-qtegugoc4a-ew.a.run.app npm run build
+npm run build
 
-# Install Netlify CLI once
-npm install -g netlify-cli
+# Install Vercel CLI once
+npm install -g vercel
+
+# Link project (first time only — creates .vercel/project.json)
+vercel link
 
 # Deploy
-netlify deploy --prod --dir dist
+vercel deploy --prod
 ```
 
 ---
@@ -134,6 +151,8 @@ Create a `frontend/.env` file for local overrides:
 ```env
 VITE_API_URL=https://library-app-qtegugoc4a-ew.a.run.app
 ```
+
+For production, set environment variables in the Vercel project dashboard (Settings → Environment Variables) rather than committing them.
 
 ---
 
@@ -158,7 +177,7 @@ Admins can promote roles in the `/admin` panel.
 ```
 frontend/
 ├── index.html
-├── netlify.toml          ← Netlify build config + SPA redirect rule
+├── vercel.json           ← Vercel build config + SPA rewrite rule
 ├── package.json
 ├── vite.config.ts
 ├── tsconfig.json

@@ -374,9 +374,12 @@ Go to **Settings → Secrets and variables → Actions → New repository secret
 | `GOOGLE_CLIENT_SECRET` | from Google Cloud Console | OAuth 2.0 secret |
 | `GH_CLIENT_ID` | from GitHub OAuth App | **note: cannot start with `GITHUB_`** |
 | `GH_CLIENT_SECRET` | from GitHub OAuth App | same note |
-| `FRONTEND_URL` | e.g. `https://your-frontend.vercel.app` | or same as BACKEND_URL |
+| `FRONTEND_URL` | e.g. `https://your-frontend.vercel.app` | Vercel deployment URL |
 | `BACKEND_URL` | your Cloud Run service URL | update after first deploy |
 | `OPENAI_API_KEY` | OpenAI key | leave empty to use fallback |
+| `VERCEL_TOKEN` | Vercel personal access token | for frontend CI/CD |
+| `VERCEL_ORG_ID` | Vercel team/personal org ID | from `vercel whoami` or project settings |
+| `VERCEL_PROJECT_ID` | Vercel project ID | from `.vercel/project.json` after `vercel link` |
 
 #### DATABASE_URL format for Cloud SQL (Unix socket)
 
