@@ -106,9 +106,7 @@ async def delete_book(db: AsyncSession, book_id: uuid.UUID) -> None:
 
     # Reject if the book is currently borrowed
     active_loan = (
-        await db.execute(
-            select(Loan).where(Loan.book_id == book_id, Loan.status == LoanStatus.OUT)
-        )
+        await db.execute(select(Loan).where(Loan.book_id == book_id, Loan.status == LoanStatus.OUT))
     ).scalar_one_or_none()
     if active_loan:
         raise HTTPException(
