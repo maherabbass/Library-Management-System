@@ -2,11 +2,12 @@ import math
 import uuid
 
 from fastapi import HTTPException
-from sqlalchemy import any_, func, literal, or_, select
+from sqlalchemy import any_, delete, func, literal, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.book import Book, BookStatus
+from app.models.loan import Loan, LoanStatus
 from app.schemas.book import BookCreate, BookListResponse, BookResponse, BookUpdate
 
 
@@ -102,5 +103,20 @@ async def update_book(db: AsyncSession, book_id: uuid.UUID, data: BookUpdate) ->
 
 async def delete_book(db: AsyncSession, book_id: uuid.UUID) -> None:
     book = await get_book(db, book_id)
+
+    # Reject if the book is currently borrowed
+    active_loan = (
+        await db.execute(
+            select(Loan).where(Loan.book_id == book_id, Loan.status == LoanStatus.OUT)
+        )
+    ).scalar_one_or_none()
+    if active_loan:
+        raise HTTPException(
+            status_code=409, detail="Cannot delete a book that is currently borrowed"
+        )
+
+    # Remove historical loan records before deleting the book (FK is RESTRICT)
+    await db.execute(delete(Loan).where(Loan.book_id == book_id))
+
     await db.delete(book)
     await db.commit()
