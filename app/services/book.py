@@ -43,7 +43,9 @@ async def list_books(
     total: int = (await db.execute(count_stmt)).scalar_one()
 
     data_stmt = (
-        stmt.order_by(Book.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+        stmt.order_by(Book.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
     )
     rows = (await db.execute(data_stmt)).scalars().all()
 
