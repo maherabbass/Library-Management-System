@@ -86,8 +86,9 @@ All protected endpoints require a **Bearer JWT** obtained through the OAuth logi
 
 1. Open `GET /api/v1/auth/login/google` (or `/github`) in your **browser**.
 2. Complete the OAuth consent screen.
-3. You are redirected to the frontend with `?token=<jwt>` in the URL.
-4. Copy the token and paste it into the **Authorize** dialog (🔒 button above).
+3. After login, open your browser Developer Tools → Application → Local Storage.
+4. Copy the value stored under `access_token`.
+5. Paste the token into the **Authorize** dialog (🔒 button above).
 
 Every protected endpoint then works directly from this Swagger UI.
 
