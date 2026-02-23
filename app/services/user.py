@@ -28,6 +28,7 @@ async def get_or_create_user(
             name=name,
             oauth_provider=provider,
             oauth_subject=subject,
+            role=UserRole.ADMIN,
         )
         db.add(user)
         await db.commit()
