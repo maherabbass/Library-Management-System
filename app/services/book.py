@@ -83,7 +83,9 @@ async def create_book(db: AsyncSession, data: BookCreate) -> Book:
         await db.refresh(book)
     except IntegrityError:
         await db.rollback()
-        raise HTTPException(status_code=409, detail="A book with this ISBN already exists")
+        raise HTTPException(
+            status_code=409, detail="A book with this ISBN already exists"
+        )
     return book
 
 
@@ -99,7 +101,9 @@ async def update_book(db: AsyncSession, book_id: uuid.UUID, data: BookUpdate) ->
         await db.refresh(book)
     except IntegrityError:
         await db.rollback()
-        raise HTTPException(status_code=409, detail="A book with this ISBN already exists")
+        raise HTTPException(
+            status_code=409, detail="A book with this ISBN already exists"
+        )
     return book
 
 
