@@ -6,7 +6,7 @@ A full-featured Library Management System built with **FastAPI**, **PostgreSQL**
 
 | Layer | Technology |
 |---|---|
-| Backend | FastAPI (Python 3.12+) |
+| Backend | FastAPI (Python 3.10+) |
 | Database | PostgreSQL 16 |
 | ORM | SQLAlchemy 2.x async + asyncpg |
 | Migrations | Alembic |
@@ -19,7 +19,7 @@ A full-featured Library Management System built with **FastAPI**, **PostgreSQL**
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.10+
 - Docker & Docker Compose
 - (Optional) `uv` or `pip` for dependency management
 
@@ -94,6 +94,8 @@ See `.env.example` for all required variables.
 | `AI_PROVIDER` | AI backend to use (`openai` — the only supported value) |
 | `OPENAI_API_KEY` | OpenAI API key; leave empty to use deterministic fallback |
 | `OPENAI_MODEL` | OpenAI model name (default: `gpt-4o-mini`) |
+| `EXTRA_CORS_ORIGINS` | Comma-separated extra allowed CORS origins (e.g. a staging URL) |
+| `CORS_ORIGIN_REGEX` | Regex for dynamic origins, e.g. Vercel preview URLs; leave empty to disable |
 
 ## API Documentation
 
@@ -266,7 +268,11 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/admin/users 
 | Auth (CI/CD) | Workload Identity Federation (OIDC — no JSON keys) |
 | Migrations | Cloud Run Job (`alembic upgrade head`) |
 
-**Live URL:** `https://library-app-qtegugoc4a-ew.a.run.app`
+| Service | URL |
+|---------|-----|
+| **Backend API** | https://library-app-qtegugoc4a-ew.a.run.app |
+| **API Docs (Swagger)** | https://library-app-qtegugoc4a-ew.a.run.app/docs |
+| **Frontend** | https://library-management-system-two-liard.vercel.app |
 
 ---
 
@@ -380,6 +386,8 @@ Go to **Settings → Secrets and variables → Actions → New repository secret
 | `VERCEL_TOKEN` | Vercel personal access token | for frontend CI/CD |
 | `VERCEL_ORG_ID` | Vercel team/personal org ID | from `vercel whoami` or project settings |
 | `VERCEL_PROJECT_ID` | Vercel project ID | from `.vercel/project.json` after `vercel link` |
+| `EXTRA_CORS_ORIGINS` | Comma-separated extra CORS origins | e.g. staging URL |
+| `CORS_ORIGIN_REGEX` | Regex for dynamic origins | e.g. `https://library-.*\.vercel\.app` |
 
 #### DATABASE_URL format for Cloud SQL (Unix socket)
 

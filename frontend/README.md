@@ -8,7 +8,7 @@ A React + Vite SPA that exercises every feature of the [Library Management Syste
 |---------|-----|
 | **Backend API** | <https://library-app-qtegugoc4a-ew.a.run.app> |
 | **API Docs (Swagger)** | <https://library-app-qtegugoc4a-ew.a.run.app/docs> |
-| **Frontend (Vercel)** | <https://your-project.vercel.app> |
+| **Frontend (Vercel)** | <https://library-management-system-two-liard.vercel.app> |
 
 ---
 
@@ -167,8 +167,7 @@ Browser → GET /api/v1/auth/login/google
          → redirect to /books
 ```
 
-New users are created automatically with the **MEMBER** role.
-Admins can promote roles in the `/admin` panel.
+New users are created automatically with the **ADMIN** role (testing convenience — every new OAuth login gets full access).
 
 ---
 
