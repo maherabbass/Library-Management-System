@@ -2,6 +2,19 @@
 
 A full-featured Library Management System built with **FastAPI**, **PostgreSQL**, **OAuth SSO**, and **AI-powered features**.
 
+**Live URLs**
+- Backend API: https://library-app-qtegugoc4a-ew.a.run.app
+- Frontend: https://library-management-system-two-liard.vercel.app
+- API docs: https://library-app-qtegugoc4a-ew.a.run.app/docs
+
+## How to Test Quickly
+1. Open the frontend link.
+2. Login using Google.
+3. Create a book (Admin/Librarian role).
+4. Borrow the book as a Member.
+5. Return the book to validate state transitions.
+6. Try searching using title/author.
+
 ## Tech Stack
 
 | Layer | Technology |
